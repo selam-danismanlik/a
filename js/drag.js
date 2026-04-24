@@ -81,9 +81,8 @@ function killGhost() {
 
 function endDrag(x, y) {
   killGhost();
-  const els      = document.elementsFromPoint(x, y);
-  const shelfEl  = els.find(el => el.classList?.contains('shelf') || el.closest?.('.shelf'));
-  const target   = shelfEl?.closest?.('.shelf') || (shelfEl?.classList?.contains('shelf') ? shelfEl : null);
+  const els    = document.elementsFromPoint(x, y);
+  const target = els.map(el => el.closest?.('.shelf')).find(Boolean) || null;
 
   if (target && _dragState && !target.classList.contains('locked')) {
     dropOnShelf(parseInt(target.dataset.shelfId));

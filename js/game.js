@@ -10,6 +10,7 @@ let difficulty   = 'easy';
 let gameMode     = 'normal';   // 'normal' | 'timed' | 'endless'
 let isDailyMode  = false;
 let prevCorrect  = 0;
+let prevMoves    = 0;
 let endlessScore = 0;
 let nextShelfId  = 10;
 
@@ -93,7 +94,6 @@ function render(skipSound = false) {
     return p !== null && p === s.target;
   }).length;
 
-  const prevMoves   = parseInt(document.getElementById('moves-val').textContent) || 0;
   const prevCorrectNum = parseInt(document.getElementById('correct-num').textContent) || 0;
 
   if (gameMode === 'endless') {
@@ -106,8 +106,9 @@ function render(skipSound = false) {
   document.getElementById('moves-val').textContent = moves;
 
   // Pop animasyonları
-  if (moves > prevMoves)   popEl('moves-val');
+  if (moves > prevMoves) popEl('moves-val');
   if (gameMode === 'endless' ? endlessScore > prevCorrectNum : correct > prevCorrectNum) popEl('correct-num');
+  prevMoves = moves;
 
   if (!skipSound && correct > prevCorrect) sndCorrect();
   prevCorrect = correct;
@@ -310,6 +311,11 @@ function shareResult() {
     const orig = btn.textContent;
     btn.textContent = '✓ Kopyalandı';
     setTimeout(() => btn.textContent = orig, 1800);
+  }).catch(() => {
+    const btn = document.getElementById('share-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✗ Kopyalanamadı';
+    setTimeout(() => btn.textContent = orig, 1800);
   });
 }
 
@@ -494,7 +500,7 @@ function initGame() {
   document.getElementById('fail-screen').classList.remove('show');
   stopConfetti();
 
-  moves = 0; gameOver = false; prevCorrect = 0;
+  moves = 0; gameOver = false; prevCorrect = 0; prevMoves = 0;
   endlessScore = 0; nextShelfId = 10;
   enteringIds.clear();
   completingIds.clear();

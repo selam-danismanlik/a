@@ -89,5 +89,12 @@ function generateGame(difficulty = 'easy', rng) {
 
 /* Günlük bulmaca üretici */
 function generateDailyGame(difficulty = 'medium') {
-  return generateGame(difficulty, mulberry32(getDailySeed(difficulty)));
+  const rng = mulberry32(getDailySeed(difficulty));
+  let result = _tryGenerate(difficulty, rng);
+  // Başlangıçta hiçbir raf çözülmüş olmasın
+  let attempts = 0;
+  while (result.some(s => shelfProduct(s.nums) === s.target) && attempts++ < 50) {
+    result = _tryGenerate(difficulty, mulberry32(getDailySeed(difficulty) + attempts));
+  }
+  return result;
 }

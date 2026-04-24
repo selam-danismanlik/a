@@ -142,39 +142,31 @@
   </section>
 
   <!-- ── Günlük Bulmaca ── -->
-  <section class="daily-section">
-    <div class="daily-section-head">
-      <div>
-        <div class="daily-section-label">Günlük Bulmaca</div>
-        <div class="daily-section-date" id="daily-date"></div>
+  <div class="daily-row" id="daily-row" onclick="openDailyModal()">
+    <div class="daily-row-left">
+      <span class="daily-row-icon">📅</span>
+      <div class="daily-row-meta">
+        <span class="daily-row-label">Günlük Bulmaca</span>
+        <span class="daily-row-date" id="daily-date"></span>
       </div>
-      <div class="daily-streak" id="daily-streak" style="display:none"></div>
     </div>
-    <div class="daily-cards" id="daily-cards"><!-- JS --></div>
-  </section>
+    <div class="daily-row-right">
+      <div class="daily-row-dots" id="daily-row-dots"><!-- JS --></div>
+      <span class="daily-row-cta">Oyna →</span>
+    </div>
+  </div>
 
-  <!-- ── Nasıl Oynanır ── -->
-  <section class="how-section">
-    <div class="section-label">Nasıl Oynanır?</div>
-    <div class="how-steps">
-      <div class="how-step">
-        <span class="step-n">01</span>
-        <p class="step-text">Her rafın üstünde bir <b>hedef sayı</b> var.</p>
+  <!-- Günlük Bulmaca Modalı -->
+  <div id="daily-modal" onclick="if(event.target===this)closeDailyModal()">
+    <div class="daily-modal-card">
+      <div class="daily-modal-header">
+        <div class="daily-modal-title">📅 Günlük Bulmaca</div>
+        <button class="daily-modal-close" onclick="closeDailyModal()">✕</button>
       </div>
-      <div class="how-step">
-        <span class="step-n">02</span>
-        <p class="step-text">Sayı chiplerini sürükleyip raflara <b>bırak</b>.</p>
-      </div>
-      <div class="how-step">
-        <span class="step-n">03</span>
-        <p class="step-text">Raftaki sayıların <b>çarpımı</b> hedefe eşit olunca raf kilitlenir.</p>
-      </div>
-      <div class="how-step">
-        <span class="step-n">04</span>
-        <p class="step-text">10 rafı tamamla, en <b>az hamlede</b> en hızlı kazan!</p>
-      </div>
+      <div class="daily-modal-date" id="daily-modal-date"></div>
+      <div class="daily-modal-diffs" id="daily-modal-diffs"><!-- JS --></div>
     </div>
-  </section>
+  </div>
 
   <footer class="landing-footer">
     RAF× &nbsp;·&nbsp; Çarpım Bulmacası &nbsp;·&nbsp; 2026
@@ -221,51 +213,62 @@ function updateDiffLinks() {
 }
 
 /* ════ GÜNLÜK BULMACA ════ */
-function buildDailyCards() {
-  // Tarih başlığı
+const DAILY_DIFFS = [
+  { key: 'easy',   label: 'Kolay' },
+  { key: 'medium', label: 'Orta'  },
+  { key: 'hard',   label: 'Zor'   },
+];
+
+function buildDailyRow() {
   const today = new Date();
   const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const el = document.getElementById('daily-date');
-  if (el) el.textContent = dateStr;
+  const dateEl = document.getElementById('daily-date');
+  if (dateEl) dateEl.textContent = dateStr;
 
-  // Streak rozeti
-  const s = getStats();
-  const streakEl = document.getElementById('daily-streak');
-  if (streakEl && s.streak > 1) {
-    streakEl.textContent = `🔥 ${s.streak} günlük seri`;
-    streakEl.style.display = '';
+  // Üç zorluk için tamamlanma noktaları
+  const dots = document.getElementById('daily-row-dots');
+  if (dots) {
+    dots.innerHTML = DAILY_DIFFS.map(({ key }) => {
+      const result = getDailyResult(key);
+      const played = !!result;
+      const stars  = played ? result.stars : 0;
+      return `<span class="daily-dot ${key}${played ? ' played' : ''}" title="${{easy:'Kolay',medium:'Orta',hard:'Zor'}[key]}">${played ? '★'.repeat(stars) + '<span class="daily-dot-empty">' + '★'.repeat(3-stars) + '</span>' : '·'}</span>`;
+    }).join('');
+  }
+}
+
+function openDailyModal() {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateEl = document.getElementById('daily-modal-date');
+  if (dateEl) dateEl.textContent = dateStr;
+
+  const container = document.getElementById('daily-modal-diffs');
+  if (container) {
+    container.innerHTML = DAILY_DIFFS.map(({ key, label }) => {
+      const result = getDailyResult(key);
+      const played = !!result;
+      const stars  = played ? result.stars : 0;
+      return `
+        <a href="game.html?d=${key}&daily=1" class="daily-modal-diff${played ? ' played' : ''}">
+          <div class="daily-modal-diff-left">
+            <span class="daily-modal-diff-name ${key}">${label}</span>
+            ${played ? `<span class="daily-modal-diff-meta">${formatTime(result.time)} · ${result.moves} hamle</span>` : '<span class="daily-modal-diff-meta">Oynanmadı</span>'}
+          </div>
+          <div class="daily-modal-diff-right">
+            <span class="daily-modal-stars">${'★'.repeat(stars)}<span class="daily-modal-stars-empty">${'★'.repeat(3-stars)}</span></span>
+            ${played ? '<span class="daily-modal-check">✓</span>' : '<span class="daily-modal-arrow">→</span>'}
+          </div>
+        </a>
+      `;
+    }).join('');
   }
 
-  const container = document.getElementById('daily-cards');
-  if (!container) return;
+  document.getElementById('daily-modal').classList.add('show');
+}
 
-  const diffs = [
-    { key: 'easy',   label: 'Kolay' },
-    { key: 'medium', label: 'Orta'  },
-    { key: 'hard',   label: 'Zor'   },
-  ];
-
-  container.innerHTML = diffs.map(({ key, label }) => {
-    const result = getDailyResult(key);
-    const played = !!result;
-    const stars  = played ? result.stars : 0;
-
-    return `
-      <a href="game.html?d=${key}&daily=1" class="daily-card${played ? ' played' : ''}">
-        <div class="daily-card-top">
-          <span class="daily-card-diff ${key}">${label}</span>
-          ${played ? '<span class="daily-card-check">✓</span>' : ''}
-        </div>
-        <div class="daily-card-stars">
-          ${'★'.repeat(stars)}<span class="daily-stars-empty">${'★'.repeat(3 - stars)}</span>
-        </div>
-        ${played
-          ? `<div class="daily-card-meta">${formatTime(result.time)} · ${result.moves} hamle</div>`
-          : `<div class="daily-card-meta">Oyna →</div>`
-        }
-      </a>
-    `;
-  }).join('');
+function closeDailyModal() {
+  document.getElementById('daily-modal').classList.remove('show');
 }
 
 /* ════ PROFİL KARTI (nav sol) ════ */
@@ -388,7 +391,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   updateDiffLinks();
-  buildDailyCards();
+  buildDailyRow();
   buildNavProfile();
   buildHeroBadges();
 });

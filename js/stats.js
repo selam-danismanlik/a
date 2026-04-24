@@ -49,6 +49,10 @@ function saveStats(s) {
 function recordGame({ difficulty, mode, seconds, moves, won, stars, isDaily }) {
   const s = getStats();
   s.totalGames++;
+  if (['easy', 'medium', 'hard'].includes(difficulty)) {
+    s.byDiff[difficulty].games++;
+  }
+  if (mode === 'timed') { s.timed.games++; }
 
   // Streak (her gün ilk oyunda güncelle)
   const today     = new Date().toISOString().slice(0, 10);
@@ -69,10 +73,9 @@ function recordGame({ difficulty, mode, seconds, moves, won, stars, isDaily }) {
     if (isDaily)       s.dailyWins++;
 
     if (['easy', 'medium', 'hard'].includes(difficulty)) {
-      s.byDiff[difficulty].games++;
       s.byDiff[difficulty].wins++;
     }
-    if (mode === 'timed')   { s.timed.games++;   s.timed.wins++; }
+    if (mode === 'timed')   { s.timed.wins++; }
     if (mode === 'endless') { s.endless.games++; }
   }
 
