@@ -16,25 +16,12 @@
   <!-- ── Navigasyon ── -->
   <nav class="site-nav">
 
-    <!-- Sol: Profil Kartı -->
-    <div class="nav-profile" id="nav-profile">
-      <div class="np-header">
-        <div class="np-avatar">◈</div>
-        <div class="np-meta">
-          <span class="np-title">Profil</span>
-          <button class="np-detail-btn" onclick="openStats()">Detay →</button>
-        </div>
-      </div>
-      <div class="np-stats" id="np-stats">
-        <!-- JS ile doldurulur -->
-      </div>
-      <div class="np-ach-wrap">
-        <span class="np-ach-label">Başarımlar <span id="np-ach-count"></span></span>
-        <div class="np-ach-grid" id="np-ach-grid">
-          <!-- JS ile doldurulur -->
-        </div>
-      </div>
-    </div>
+    <!-- Sol: Profil İkonu -->
+    <button class="nav-profile-icon-btn" id="nav-profile-icon-btn" title="Profil" onclick="openProfileModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+    </button>
 
     <!-- Sağ: Brand + Kontroller -->
     <div class="nav-right">
@@ -173,6 +160,19 @@
   </footer>
 
 </div><!-- /landing -->
+
+<!-- ── Profil Modali (mobil) ── -->
+<div id="profile-modal" onclick="if(event.target===this)closeProfileModal()">
+  <div class="profile-modal-card">
+    <div class="profile-modal-header">
+      <div class="profile-modal-avatar">◈</div>
+      <div class="profile-modal-title">Profil</div>
+      <button class="profile-modal-stats-btn" onclick="closeProfileModal(); openStats()">İstatistikler →</button>
+      <button class="profile-modal-close" onclick="closeProfileModal()">✕</button>
+    </div>
+    <div id="profile-modal-body"></div>
+  </div>
+</div>
 
 <!-- ── İstatistik Modali ── -->
 <div id="stats-modal" onclick="if(event.target===this)closeStats()">
@@ -377,6 +377,59 @@ function buildStatsModal() {
   `;
 }
 
+/* ════ PROFİL MODALİ (mobil) ════ */
+function openProfileModal() {
+  buildProfileModal();
+  document.getElementById('profile-modal').classList.add('show');
+}
+function closeProfileModal() {
+  document.getElementById('profile-modal').classList.remove('show');
+}
+
+function buildProfileModal() {
+  const s        = getStats();
+  const unlocked = getUnlockedIds();
+  const pct      = s.totalGames > 0 ? Math.round((s.totalWins / s.totalGames) * 100) : 0;
+  const avg      = s.totalWins > 0 ? formatTime(Math.round(s.totalTime / s.totalWins)) : '—';
+  const avgM     = s.totalWins > 0 ? Math.round(s.totalMoves / s.totalWins) : '—';
+  const maxW     = Math.max(s.byDiff.easy.wins, s.byDiff.medium.wins, s.byDiff.hard.wins, 1);
+  const barPct   = d => Math.round((s.byDiff[d].wins / maxW) * 100);
+
+  document.getElementById('profile-modal-body').innerHTML = `
+    <div class="pm-stats-grid">
+      <div class="pm-stat"><span class="pm-stat-val">${s.totalGames}</span><span class="pm-stat-lbl">Oyun</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${s.totalWins}</span><span class="pm-stat-lbl">Kazanılan</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${pct}%</span><span class="pm-stat-lbl">Oran</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${avg}</span><span class="pm-stat-lbl">Ort. Süre</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${avgM}</span><span class="pm-stat-lbl">Ort. Hamle</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${s.streak > 0 ? '🔥' + s.streak : '—'}</span><span class="pm-stat-lbl">Seri</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${s.bestStreak}</span><span class="pm-stat-lbl">En Uzun Seri</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${s.endless.best || 0}</span><span class="pm-stat-lbl">Sonsuz Rekoru</span></div>
+      <div class="pm-stat"><span class="pm-stat-val">${s.dailyWins}</span><span class="pm-stat-lbl">Günlük Kazan</span></div>
+    </div>
+    <div class="pm-section-label">Zorluk Dağılımı</div>
+    <div class="pm-diff-bars">
+      ${['easy','medium','hard'].map(d => `
+        <div class="pm-diff-bar-row" data-diff="${d}">
+          <div class="pm-diff-bar-label">${{easy:'Kolay',medium:'Orta',hard:'Zor'}[d]}</div>
+          <div class="pm-diff-bar-track"><div class="pm-diff-bar-fill" style="width:${barPct(d)}%"></div></div>
+          <div class="pm-diff-bar-count">${s.byDiff[d].wins}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="pm-section-label">Başarımlar <span class="pm-ach-count">${unlocked.size}/${ACHIEVEMENTS.length}</span></div>
+    <div class="pm-ach-grid">
+      ${ACHIEVEMENTS.map(a => {
+        const on = unlocked.has(a.id);
+        return `<div class="pm-ach-chip${on ? ' on' : ''}" title="${a.name}">
+          <span class="pm-ach-icon">${a.icon}</span>
+          <span class="pm-ach-name">${a.name}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 /* ════ BAŞLAT ════ */
 window.addEventListener('DOMContentLoaded', () => {
   // Rekorları yükle
@@ -392,7 +445,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateDiffLinks();
   buildDailyRow();
-  buildNavProfile();
   buildHeroBadges();
 });
 </script>

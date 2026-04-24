@@ -7,7 +7,7 @@ const BOARD_KEY = 'rafx_board';
 function applyTheme(dark) {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   const toggle = document.getElementById('theme-toggle');
-  if (toggle) toggle.checked = !dark;
+  if (toggle) toggle.checked = dark;
 }
 
 function initTheme() {
@@ -17,7 +17,7 @@ function initTheme() {
 }
 
 function onThemeToggle(e) {
-  const dark = !e.target.checked;
+  const dark = e.target.checked;
   localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
   applyTheme(dark);
 }

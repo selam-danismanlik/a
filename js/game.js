@@ -133,6 +133,7 @@ function render(skipSound = false) {
           replaceShelf(shelf.id);
         } else {
           prevLocked.add(shelf.id);
+          render(true);
           checkWin();
         }
       }, 420);
@@ -296,6 +297,10 @@ function dropOnShelf(toId) {
   targetShelf.nums.push(val);
   moves++;
   clearDragState();
+
+  const p = targetShelf.nums.reduce((a, b) => a * b, 1);
+  if (p !== targetShelf.target) sndWrong();
+
   render();
 }
 
@@ -335,13 +340,13 @@ function downloadCard() {
   cx.scale(DPR, DPR);
 
   // ── Renkler
-  const bg      = dark ? '#080808' : '#ffffff';
-  const panel   = dark ? '#101010' : '#f5f8ff';
-  const border  = dark ? '#1e1e1e' : '#dde5f5';
-  const textCol = dark ? '#e8e4dc' : '#111111';
-  const mutedC  = dark ? '#606060' : '#888888';
-  const accent  = '#3b82f6';
-  const gold    = '#fbbf24';
+  const bg      = dark ? '#0c0b09' : '#f2ede4';
+  const panel   = dark ? '#131210' : '#e9e3d9';
+  const border  = dark ? '#252219' : '#cfc8bc';
+  const textCol = dark ? '#ede7d9' : '#1a1714';
+  const mutedC  = dark ? '#7a7060' : '#6a6460';
+  const accent  = dark ? '#d4f03c' : '#5c8800';
+  const gold    = '#f5a623';
 
   // ── Arkaplan + kenarlık
   cx.fillStyle = bg;
@@ -363,14 +368,14 @@ function downloadCard() {
   cx.stroke();
 
   // ── Logo
-  cx.font      = 'bold 32px Space Mono, monospace';
+  cx.font      = '800 32px Outfit, sans-serif';
   cx.fillStyle = textCol;
   cx.fillText('RAF', 24, 46);
   cx.fillStyle = accent;
   cx.fillText('×', 88, 46);
 
   // ── Başlık sağ
-  cx.font      = '10px Space Mono, monospace';
+  cx.font      = '10px JetBrains Mono, monospace';
   cx.fillStyle = mutedC;
   cx.textAlign = 'right';
   cx.fillText('ÇARPIM BULMACASI', W - 24, 34);
@@ -401,12 +406,12 @@ function downloadCard() {
     cx.roundRect(x + 0.5, statY + 0.5, statBoxW - 1, statBoxH - 1, 7.5);
     cx.stroke();
 
-    cx.font      = 'bold 18px Space Mono, monospace';
+    cx.font      = 'bold 18px JetBrains Mono, monospace';
     cx.fillStyle = gold;
     cx.textAlign = 'center';
     cx.fillText(vals[i], x + statBoxW / 2, statY + 34);
 
-    cx.font      = '8px Space Mono, monospace';
+    cx.font      = '8px JetBrains Mono, monospace';
     cx.fillStyle = mutedC;
     cx.fillText(lbl.toUpperCase(), x + statBoxW / 2, statY + 54);
     cx.textAlign = 'left';
@@ -420,7 +425,7 @@ function downloadCard() {
   cx.lineWidth   = 1;
   cx.roundRect(24.5, 216.5, 99, 21, 10.5);
   cx.stroke();
-  cx.font      = 'bold 9px Space Mono, monospace';
+  cx.font      = 'bold 9px JetBrains Mono, monospace';
   cx.fillStyle = accent;
   cx.textAlign = 'center';
   cx.fillText(modeName.toUpperCase(), 74, 231);
@@ -434,7 +439,7 @@ function downloadCard() {
     cx.lineWidth   = 1;
     cx.roundRect(136.5, 216.5, 89, 21, 10.5);
     cx.stroke();
-    cx.font      = 'bold 9px Space Mono, monospace';
+    cx.font      = 'bold 9px JetBrains Mono, monospace';
     cx.fillStyle = '#f59e0b';
     cx.textAlign = 'center';
     cx.fillText('GÜNLÜK', 181, 231);
@@ -442,7 +447,7 @@ function downloadCard() {
   }
 
   // ── Alt branding
-  cx.font      = '9px Space Mono, monospace';
+  cx.font      = '9px JetBrains Mono, monospace';
   cx.fillStyle = mutedC;
   cx.textAlign = 'right';
   cx.fillText('RAF× Çarpım Bulmacası', W - 24, H - 16);
