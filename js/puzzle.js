@@ -47,7 +47,7 @@ function _tryGenerate(difficulty, rng) {
   const { min, max } = DIFF_CONFIG[difficulty];
   const solution = [];
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     const size = r() < 0.5 ? 2 : 3;
     const nums = Array.from({ length: size }, () => randInt(min, max, r));
     solution.push({ id: i, target: shelfProduct(nums), size, nums: [...nums] });
@@ -70,19 +70,21 @@ function _tryGenerate(difficulty, rng) {
       : [pool3[i3++], pool3[i3++], pool3[i3++]];
   });
 
-  return scrambled;
+  const solutionMap = solution.map(s => [...s.nums]);
+  return { shelves: scrambled, solution: solutionMap };
 }
 
 /*
  * Ana üretici — başlangıçta hiçbir raf doğru olmayacak şekilde üretir.
  * Seeded RNG verilirse (günlük bulmaca) tek denemede döndürür.
+ * Dönüş: { shelves, solution } — solution[i] = raf i için doğru sayı dizisi.
  */
 function generateGame(difficulty = 'easy', rng) {
   if (rng) return _tryGenerate(difficulty, rng); // seeded: deterministik
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    const scrambled = _tryGenerate(difficulty);
-    if (!scrambled.some(s => shelfProduct(s.nums) === s.target)) return scrambled;
+    const result = _tryGenerate(difficulty);
+    if (!result.shelves.some(s => shelfProduct(s.nums) === s.target)) return result;
   }
   return _tryGenerate(difficulty);
 }
@@ -93,7 +95,7 @@ function generateDailyGame(difficulty = 'medium') {
   let result = _tryGenerate(difficulty, rng);
   // Başlangıçta hiçbir raf çözülmüş olmasın
   let attempts = 0;
-  while (result.some(s => shelfProduct(s.nums) === s.target) && attempts++ < 50) {
+  while (result.shelves.some(s => shelfProduct(s.nums) === s.target) && attempts++ < 50) {
     result = _tryGenerate(difficulty, mulberry32(getDailySeed(difficulty) + attempts));
   }
   return result;

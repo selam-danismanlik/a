@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAF× — Çarpım Bulmacası</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d4f03c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RAF×">
+<link rel="apple-touch-icon" href="icons/icon.svg">
 <script src="js/storage.js" defer></script>
 <script src="js/stats.js" defer></script>
 <script src="js/theme.js" defer></script>
@@ -27,12 +32,12 @@
     <div class="nav-right">
       <div class="nav-brand">RAF<span class="x">×</span></div>
       <div class="nav-controls">
-        <button class="nav-btn" id="board-btn" title="Akıllı Tahta Modu">
+        <a href="settings.html" class="nav-btn" title="Ayarlar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          Tahta
-        </button>
+          Ayarlar
+        </a>
         <label class="bb8-toggle">
           <input class="bb8-toggle__checkbox" type="checkbox" id="theme-toggle">
           <div class="bb8-toggle__container">
@@ -271,53 +276,6 @@ function closeDailyModal() {
   document.getElementById('daily-modal').classList.remove('show');
 }
 
-/* ════ PROFİL KARTI (nav sol) ════ */
-function buildNavProfile() {
-  const s        = getStats();
-  const unlocked = getUnlockedIds();
-  const pct      = s.totalGames > 0 ? Math.round((s.totalWins / s.totalGames) * 100) : 0;
-  const avg      = s.totalWins > 0 ? formatTime(Math.round(s.totalTime / s.totalWins)) : '—';
-
-  // İstatistik satırları
-  const statsEl = document.getElementById('np-stats');
-  if (statsEl) {
-    statsEl.innerHTML = `
-      <div class="np-stat-row">
-        <span class="np-stat-val">${s.totalWins}</span>
-        <span class="np-stat-lbl">Kazanılan</span>
-      </div>
-      <div class="np-stat-sep"></div>
-      <div class="np-stat-row">
-        <span class="np-stat-val">${pct}%</span>
-        <span class="np-stat-lbl">Oran</span>
-      </div>
-      <div class="np-stat-sep"></div>
-      <div class="np-stat-row">
-        <span class="np-stat-val">${s.streak > 0 ? '🔥' + s.streak : '—'}</span>
-        <span class="np-stat-lbl">Seri</span>
-      </div>
-      <div class="np-stat-sep"></div>
-      <div class="np-stat-row">
-        <span class="np-stat-val">${avg}</span>
-        <span class="np-stat-lbl">Ort. Süre</span>
-      </div>
-    `;
-  }
-
-  // Başarım sayısı
-  const countEl = document.getElementById('np-ach-count');
-  if (countEl) countEl.textContent = `${unlocked.size}/${ACHIEVEMENTS.length}`;
-
-  // Başarım ikonları (sadece icon, hover'da isim)
-  const achGrid = document.getElementById('np-ach-grid');
-  if (achGrid) {
-    achGrid.innerHTML = ACHIEVEMENTS.map(a => {
-      const on = unlocked.has(a.id);
-      return `<div class="np-ach-chip${on ? ' on' : ''}" title="${a.name}">${a.icon}</div>`;
-    }).join('');
-  }
-}
-
 /* ════ HERO BADGES ════ */
 function buildHeroBadges() {
   const s   = getStats();
@@ -447,6 +405,12 @@ window.addEventListener('DOMContentLoaded', () => {
   buildDailyRow();
   buildHeroBadges();
 });
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
 </script>
 
 </body>

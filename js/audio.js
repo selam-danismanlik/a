@@ -1,12 +1,21 @@
 // audio.js — Ses sistemi
 
-let _actx = null;
+const MUTE_KEY = 'rafx_muted';
+let _muted = localStorage.getItem(MUTE_KEY) === '1';
+let _actx   = null;
+
+function isMuted()    { return _muted; }
+function toggleMute() {
+  _muted = !_muted;
+  localStorage.setItem(MUTE_KEY, _muted ? '1' : '0');
+}
 
 function actx() {
   return _actx || (_actx = new (window.AudioContext || window.webkitAudioContext)());
 }
 
 function tone(freq, type, dur, vol = 0.12) {
+  if (_muted) return;
   try {
     const c = actx(), o = c.createOscillator(), g = c.createGain();
     o.connect(g); g.connect(c.destination);

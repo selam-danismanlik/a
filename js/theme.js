@@ -40,11 +40,13 @@ function toggleBoardMode() {
   localStorage.setItem(BOARD_KEY, next ? 'on' : 'off');
   applyBoardMode(next);
 
-  if (next) {
+  // Fullscreen sadece oyun sayfasında
+  const onGamePage = !!document.getElementById('game-area');
+  if (next && onGamePage) {
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  } else {
+  } else if (!next) {
     if (document.exitFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }

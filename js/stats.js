@@ -69,7 +69,7 @@ function recordGame({ difficulty, mode, seconds, moves, won, stars, isDaily }) {
     s.totalTime  += seconds;
     if (stars === 3)   s.got3stars    = true;
     if (seconds < 60)  s.subMinuteWin = true;
-    if (moves <= 15)   s.lowMovesWin  = true;
+    if (moves <= 18)   s.lowMovesWin  = true;
     if (isDaily)       s.dailyWins++;
 
     if (['easy', 'medium', 'hard'].includes(difficulty)) {

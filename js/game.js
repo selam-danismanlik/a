@@ -13,6 +13,9 @@ let prevCorrect  = 0;
 let prevMoves    = 0;
 let endlessScore = 0;
 let nextShelfId  = 10;
+let hintsUsed    = 0;
+let _solution    = [];
+const HINTS_MAX  = 3;
 
 const enteringIds   = new Set();
 const completingIds = new Set();
@@ -20,12 +23,12 @@ const prevLocked    = new Set();
 
 /* ── Yıldız eşikleri ── */
 const STARS = {
-  easy:   { three: { sec: 60,  moves: 20 }, two: { sec: 120, moves: 35 } },
-  medium: { three: { sec: 90,  moves: 30 }, two: { sec: 180, moves: 50 } },
-  hard:   { three: { sec: 150, moves: 50 }, two: { sec: 300, moves: 80 } },
+  easy:   { three: { sec: 75,  moves: 24 }, two: { sec: 150, moves: 42 } },
+  medium: { three: { sec: 110, moves: 36 }, two: { sec: 220, moves: 60 } },
+  hard:   { three: { sec: 180, moves: 60 }, two: { sec: 360, moves: 96 } },
 };
 
-const TIMED_LIMITS = { easy: 120, medium: 90, hard: 150 };
+const TIMED_LIMITS = { easy: 150, medium: 120, hard: 180 };
 
 function calcStars(sec, mv, diff) {
   const t = STARS[diff];
@@ -209,6 +212,7 @@ function replaceShelf(completedId) {
 
   const newShelf = { id: nextShelfId++, target, size, nums: [], locked: false };
   shelves[idx] = newShelf;
+  _solution[newShelf.id] = [...nums]; // ipucu için çözümü kaydet
 
   const unlocked = shelves.filter(s => !s.locked && !completingIds.has(s.id));
   if (unlocked.length === 0) {
@@ -225,9 +229,84 @@ function replaceShelf(completedId) {
   setTimeout(() => enteringIds.delete(newShelf.id), 460);
 }
 
+/* ── İpucu sistemi ── */
+function updateHintButton() {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  const remaining = HINTS_MAX - hintsUsed;
+  btn.innerHTML = `💡 ipucu <span class="hint-count">${remaining}</span>`;
+  btn.disabled = remaining === 0 || gameOver;
+  btn.classList.toggle('depleted', remaining === 0);
+}
+
+function useHint() {
+  if (gameOver || hintsUsed >= HINTS_MAX) return;
+
+  // 1) Eksik sayısı olan açık bir raf bul
+  const candidate = shelves.find(shelf => {
+    if (shelf.locked || completingIds.has(shelf.id)) return false;
+    const target = _solution[shelf.id];
+    if (!target) return false;
+    const cur = {}; shelf.nums.forEach(n => cur[n] = (cur[n] || 0) + 1);
+    const tgt = {}; target.forEach(n => tgt[n] = (tgt[n] || 0) + 1);
+    return Object.keys(tgt).some(v => (cur[v] || 0) < tgt[v]);
+  });
+  if (!candidate) return;
+
+  // 2) Bu raf için eksik bir değer seç
+  const target = _solution[candidate.id];
+  const cur = {}; candidate.nums.forEach(n => cur[n] = (cur[n] || 0) + 1);
+  const tgt = {}; target.forEach(n => tgt[n] = (tgt[n] || 0) + 1);
+  let missingVal = null;
+  for (const v of Object.keys(tgt)) {
+    if ((cur[v] || 0) < tgt[v]) { missingVal = parseInt(v); break; }
+  }
+  if (missingVal === null) return;
+
+  // 3) Bu değeri başka bir kilitsiz rafta bul (öncelik: orada fazlalık olan)
+  let srcId = null, srcIdx = null;
+  for (const s of shelves) {
+    if (s.id === candidate.id || s.locked || completingIds.has(s.id)) continue;
+    const tCounts = {}; (_solution[s.id] || []).forEach(n => tCounts[n] = (tCounts[n] || 0) + 1);
+    const cCounts = {}; s.nums.forEach(n => cCounts[n] = (cCounts[n] || 0) + 1);
+    if ((cCounts[missingVal] || 0) > (tCounts[missingVal] || 0)) {
+      const idx = s.nums.indexOf(missingVal);
+      if (idx !== -1) { srcId = s.id; srcIdx = idx; break; }
+    }
+  }
+  // Yedek: fazlalık yoksa ilk buluşa git
+  if (srcId === null) {
+    for (const s of shelves) {
+      if (s.id === candidate.id || s.locked || completingIds.has(s.id)) continue;
+      const idx = s.nums.indexOf(missingVal);
+      if (idx !== -1) { srcId = s.id; srcIdx = idx; break; }
+    }
+  }
+  if (srcId === null) return;
+
+  hintsUsed++;
+  updateHintButton();
+
+  // 4) Vurgula: kaynak chip + hedef raf
+  const srcShelfEl = document.querySelector(`.shelf[data-shelf-id="${srcId}"]`);
+  const tgtShelfEl = document.querySelector(`.shelf[data-shelf-id="${candidate.id}"]`);
+  const srcChip    = srcShelfEl?.querySelectorAll('.num-chip')[srcIdx];
+
+  if (srcChip)    srcChip.classList.add('hint-glow');
+  if (tgtShelfEl) tgtShelfEl.classList.add('hint-glow-shelf');
+
+  setTimeout(() => {
+    srcChip?.classList.remove('hint-glow');
+    tgtShelfEl?.classList.remove('hint-glow-shelf');
+  }, 2100);
+}
+
 /* ── Kazanma ekranı ── */
 function showWin() {
-  const stars    = gameMode === 'endless' ? 0 : calcStars(timerSec, moves, difficulty);
+  let   stars    = gameMode === 'endless' ? 0 : calcStars(timerSec, moves, difficulty);
+  if (gameMode !== 'endless' && hintsUsed > 0) {
+    stars = Math.max(1, stars - hintsUsed);
+  }
   const timeStr  = formatTime(timerSec);
   const isRecord = saveRecord(difficulty, timerSec, moves);
   const diffName = { easy: 'Kolay', medium: 'Orta', hard: 'Zor' }[difficulty];
@@ -258,10 +337,12 @@ function showWin() {
   if (dailyBadge) dailyBadge.style.display = isDailyMode ? 'block' : 'none';
 
   document.getElementById('win-screen').classList.add('show');
+  updateHintButton();
 }
 
 /* ── Süre doldu ekranı ── */
 function showFail() {
+  updateHintButton();
   const correct  = shelves.filter(s => prevLocked.has(s.id)).length;
   const diffName = { easy: 'Kolay', medium: 'Orta', hard: 'Zor' }[difficulty];
 
@@ -506,7 +587,7 @@ function initGame() {
   stopConfetti();
 
   moves = 0; gameOver = false; prevCorrect = 0; prevMoves = 0;
-  endlessScore = 0; nextShelfId = 10;
+  endlessScore = 0; nextShelfId = 12; hintsUsed = 0;
   enteringIds.clear();
   completingIds.clear();
   prevLocked.clear();
@@ -528,12 +609,15 @@ function initGame() {
   modeBadge.textContent   = modeLabel;
   modeBadge.style.display = modeLabel ? '' : 'none';
 
-  // İlerleme etiketi
+  const _gen = isDailyMode ? generateDailyGame(difficulty) : generateGame(difficulty);
+  shelves   = _gen.shelves;
+  _solution = _gen.solution;
+
+  // İlerleme etiketi — raf sayısı dinamik
   document.querySelector('.progress-text').innerHTML = gameMode === 'endless'
     ? '<strong id="correct-num">0</strong> raf tamamlandı'
-    : '<strong id="correct-num">0</strong> / 10 raf tamamlandı';
-
-  shelves = isDailyMode ? generateDailyGame(difficulty) : generateGame(difficulty);
+    : `<strong id="correct-num">0</strong> / ${shelves.length} raf tamamlandı`;
+  updateHintButton();
   startTimer();
   render(true);
 }

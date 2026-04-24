@@ -17,7 +17,7 @@ function saveRecord(difficulty, seconds, moves) {
   const betterMoves = !rec.bestMoves || moves   < rec.bestMoves;
   if (betterTime)  rec.bestTime  = seconds;
   if (betterMoves) rec.bestMoves = moves;
-  if (betterTime && betterMoves) isNewRecord = true;
+  if (betterTime || betterMoves) isNewRecord = true;
   rec.gamesWon = (rec.gamesWon || 0) + 1;
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
